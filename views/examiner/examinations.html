@@ -1,0 +1,80 @@
+<!-- ==========================================
+     MILESTONE 4: EXAMINER ASSIGNED EXAMINATIONS
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Assigned Examinations - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Assigned Examinations</h2>
+        <p class="text-muted mb-0">Review evaluation guidelines, timeline constraints, and manage your examination slots</p>
+    </div>
+</div>
+
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Examinations Assigned to You ({{ examinations|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Examination Name</th>
+                    <th>Type & Duration</th>
+                    <th>Rubric Criteria</th>
+                    <th>Slot Creation Window</th>
+                    <th>Student Booking Window</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in examinations %}
+                <tr>
+                    <td><span class="badge bg-secondary">{{ exam.course.course_code }}</span></td>
+                    <td>
+                        <strong>{{ exam.name }}</strong>
+                        {% if exam.description %}
+                        <div class="small text-muted text-truncate" style="max-width: 250px;">{{ exam.description }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ exam.exam_type }}</span><br>
+                        <small class="text-muted">{{ exam.duration }} mins | Max: {{ exam.max_marks }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ exam.rubrics|length }} Criteria</span><br>
+                        <small class="text-muted">Total: {{ exam.total_rubric_marks }} marks</small>
+                    </td>
+                    <td class="small">
+                        {{ exam.slot_creation_start.strftime('%d %b %Y %H:%M') }}<br>to {{ exam.slot_creation_end.strftime('%d %b %Y %H:%M') }}<br>
+                        {% if exam.is_slot_creation_open() %}
+                            <span class="badge bg-success mt-1">Creation Open</span>
+                        {% else %}
+                            <span class="badge bg-secondary mt-1">Creation Closed</span>
+                        {% endif %}
+                    </td>
+                    <td class="small">
+                        {{ exam.booking_start.strftime('%d %b %Y %H:%M') }}<br>to {{ exam.booking_end.strftime('%d %b %Y %H:%M') }}
+                    </td>
+                    <td>
+                        {% if exam.is_slot_creation_open() %}
+                        <a href="{{ url_for('examiner_slots', exam_id=exam.id) }}" class="btn btn-sm btn-emp-primary">Manage Slots</a>
+                        {% else %}
+                        <a href="{{ url_for('examiner_slots', exam_id=exam.id) }}" class="btn btn-sm btn-outline-secondary">View Slots</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No examinations have been assigned to you yet by the administrator.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,89 @@
+<!-- ==========================================
+     MILESTONE 6: STUDENT PUBLISHED RESULTS
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Examination Results - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Examination Results & Feedback</h2>
+        <p class="text-muted mb-0">View official published evaluation scores, examiner feedback, and rubric breakdown</p>
+    </div>
+</div>
+
+{% for r in evaluations %}
+<div class="emp-card mb-4">
+    <div class="emp-card-header d-flex justify-content-between align-items-center bg-light">
+        <div>
+            <h5 class="fw-bold text-navy mb-0">{{ r.booking.slot.examination.name }}</h5>
+            <small class="text-muted">{{ r.booking.slot.examination.course.course_code }} - {{ r.booking.slot.examination.course.course_name }} ({{ r.booking.slot.examination.exam_type }})</small>
+        </div>
+        <div class="text-end">
+            <span class="fs-4 fw-bold text-success">{{ r.total_marks }} / {{ r.booking.slot.examination.max_marks }}</span>
+            {% set pct = ((r.total_marks / r.booking.slot.examination.max_marks) * 100)|round(1) %}
+            <div class="small fw-semibold text-muted">{{ pct }}%</div>
+        </div>
+    </div>
+    <div class="p-4">
+        <div class="row mb-3">
+            <div class="col-md-6 small text-muted">
+                <strong>Evaluated By:</strong> {{ r.examiner.full_name }} ({{ r.examiner.examiner_profile.department if r.examiner.examiner_profile else 'Faculty' }})
+            </div>
+            <div class="col-md-6 small text-muted text-md-end">
+                <strong>Date Evaluated:</strong> {{ r.evaluated_at.strftime('%d %B %Y at %H:%M') }}
+            </div>
+        </div>
+
+        <!-- Rubric Criterion Breakdown -->
+        {% if r.criterion_scores %}
+        <h6 class="fw-bold text-navy mb-2">Criterion Performance Breakdown</h6>
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Criterion</th>
+                        <th style="width: 20%;">Score Awarded</th>
+                        <th style="width: 50%;">Examiner Criterion Feedback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in r.criterion_scores %}
+                    <tr>
+                        <td>
+                            <strong>{{ score.rubric.criterion_name }}</strong>
+                            {% if score.rubric.description %}
+                            <div class="small text-muted">{{ score.rubric.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-primary fs-6">{{ score.marks_obtained }} / {{ score.rubric.max_marks }}</span>
+                        </td>
+                        <td class="small">
+                            {{ score.feedback or 'No specific feedback provided' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Overall Remarks -->
+        {% if r.remarks %}
+        <div class="bg-light border rounded p-3">
+            <strong class="text-navy">Overall Examiner Feedback:</strong>
+            <p class="mb-0 mt-1 fst-italic">"{{ r.remarks }}"</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="emp-card p-5 text-center text-muted">
+    <h5>No published results available yet.</h5>
+    <p class="mb-0">Your examination scores will appear here once your examiners complete evaluation and publish the results.</p>
+</div>
+{% endfor %}
+{% endblock %}
+

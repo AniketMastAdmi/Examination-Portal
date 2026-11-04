@@ -1,0 +1,148 @@
+<!-- ==========================================
+     MILESTONE 4: EXAMINER DASHBOARD TEMPLATE
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Examiner Dashboard - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Examiner Dashboard</h2>
+        <p class="text-muted mb-0">Welcome, {{ current_user.full_name }} &bull; Department of {{ current_user.examiner_profile.department if current_user.examiner_profile else 'Academic Studies' }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('examiner_slots') }}" class="btn btn-emp-primary">+ Create Examination Slot</a>
+    </div>
+</div>
+
+<!-- Examiner Statistics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ assigned_exams_count }}</div>
+                <div class="stat-label">Assigned Examinations</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ total_slots_count }}</div>
+                <div class="stat-label">My Created Slots</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ booked_students_count }}</div>
+                <div class="stat-label">Students Booked</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value text-warning">{{ pending_evaluations_count }}</div>
+                <div class="stat-label">Pending Evaluations</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assigned Examinations Overview -->
+<div class="emp-card mb-4">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>My Assigned Examinations</span>
+        <a href="{{ url_for('examiner_examinations') }}" class="small text-decoration-none">View All Details &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Examination</th>
+                    <th>Slot Creation Window</th>
+                    <th>Slot Creation Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in assigned_exams %}
+                <tr>
+                    <td><span class="badge bg-secondary">{{ exam.course.course_code }}</span></td>
+                    <td>
+                        <strong>{{ exam.name }}</strong><br>
+                        <small class="text-muted">{{ exam.exam_type }} (Max: {{ exam.max_marks }} marks)</small>
+                    </td>
+                    <td class="small">
+                        {{ exam.slot_creation_start.strftime('%d %b %Y %H:%M') }}<br>to {{ exam.slot_creation_end.strftime('%d %b %Y %H:%M') }}
+                    </td>
+                    <td>
+                        {% if exam.is_slot_creation_open() %}
+                            <span class="badge bg-success">Window Open</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Window Closed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if exam.is_slot_creation_open() %}
+                        <a href="{{ url_for('examiner_slots', exam_id=exam.id) }}" class="btn btn-sm btn-emp-primary">+ Create Slot</a>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-secondary" disabled>Window Closed</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">You have not been assigned to any examinations yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Upcoming Slots and Students to Evaluate -->
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Students Awaiting Evaluation</span>
+        <a href="{{ url_for('examiner_students') }}" class="small text-decoration-none">All Booked Students &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Student Name</th>
+                    <th>Roll No / ID</th>
+                    <th>Examination</th>
+                    <th>Slot Date & Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in pending_evaluations_list %}
+                <tr>
+                    <td><code>#BK-{{ b.id }}</code></td>
+                    <td><strong>{{ b.student.full_name }}</strong></td>
+                    <td>{{ b.student.student_id or 'N/A' }}</td>
+                    <td>{{ b.slot.examination.name }}</td>
+                    <td class="small">{{ b.slot.date.strftime('%d %b %Y') }} at {{ b.slot.start_time.strftime('%H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('examiner_evaluate', booking_id=b.id) }}" class="btn btn-sm btn-warning">Evaluate Student</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No pending evaluations right now. All caught up!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

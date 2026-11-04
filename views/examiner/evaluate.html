@@ -1,0 +1,138 @@
+<!-- ==========================================
+     MILESTONE 4: EXAMINER EVALUATION FORM
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Evaluate Student - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('examiner_students') }}">My Students</a></li>
+                <li class="breadcrumb-item active">Evaluate Booking #BK-{{ booking.id }}</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-navy mb-0">Student Examination Evaluation</h2>
+        <p class="text-muted mb-0">Score individual rubric criteria, add constructive feedback, and submit evaluation</p>
+    </div>
+    <a href="{{ url_for('examiner_students') }}" class="btn btn-outline-secondary">&larr; Back to Students</a>
+</div>
+
+<!-- Student & Examination Meta Card -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="emp-card p-3 h-100">
+            <h6 class="fw-bold text-navy border-bottom pb-2">Student Information</h6>
+            <div class="row">
+                <div class="col-sm-4 text-muted">Full Name:</div>
+                <div class="col-sm-8 fw-semibold">{{ booking.student.full_name }}</div>
+                <div class="col-sm-4 text-muted">Roll No / ID:</div>
+                <div class="col-sm-8">{{ booking.student.student_id or 'N/A' }}</div>
+                <div class="col-sm-4 text-muted">Department:</div>
+                <div class="col-sm-8">{{ booking.student.department or 'N/A' }}</div>
+                <div class="col-sm-4 text-muted">Email:</div>
+                <div class="col-sm-8">{{ booking.student.email }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="emp-card p-3 h-100">
+            <h6 class="fw-bold text-navy border-bottom pb-2">Examination Details</h6>
+            <div class="row">
+                <div class="col-sm-4 text-muted">Course:</div>
+                <div class="col-sm-8 fw-semibold">{{ booking.slot.examination.course.course_code }} - {{ booking.slot.examination.course.course_name }}</div>
+                <div class="col-sm-4 text-muted">Examination:</div>
+                <div class="col-sm-8">{{ booking.slot.examination.name }} ({{ booking.slot.examination.exam_type }})</div>
+                <div class="col-sm-4 text-muted">Max Marks:</div>
+                <div class="col-sm-8"><span class="badge bg-primary fs-6">{{ booking.slot.examination.max_marks }}</span></div>
+                <div class="col-sm-4 text-muted">Slot Time:</div>
+                <div class="col-sm-8">{{ booking.slot.date.strftime('%d %b %Y') }}, {{ booking.slot.start_time.strftime('%H:%M') }} - {{ booking.slot.end_time.strftime('%H:%M') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Form -->
+<form method="POST" action="{{ url_for('examiner_evaluate_submit', booking_id=booking.id) }}">
+    <div class="emp-card p-4 mb-4">
+        <h5 class="fw-bold text-navy mb-3">Rubric Criteria Scoring</h5>
+        
+        {% if booking.slot.examination.rubrics %}
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 30%;">Criterion & Expectations</th>
+                            <th style="width: 15%;">Max Marks</th>
+                            <th style="width: 20%;">Marks Awarded</th>
+                            <th style="width: 35%;">Criterion Feedback / Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rubric in booking.slot.examination.rubrics %}
+                        {% set existing_score = existing_scores.get(rubric.id) %}
+                        <tr>
+                            <td>
+                                <strong>{{ rubric.criterion_name }}</strong>
+                                {% if rubric.description %}
+                                <div class="small text-muted">{{ rubric.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ rubric.max_marks }} pts</span>
+                                {% if rubric.weightage != 1.0 %}
+                                <span class="badge bg-light text-dark border">Weight: {{ rubric.weightage }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <input type="number" step="0.5" min="0" max="{{ rubric.max_marks }}" 
+                                       name="marks_{{ rubric.id }}" class="form-control" 
+                                       value="{{ existing_score.marks_obtained if existing_score else '' }}" 
+                                       placeholder="0 - {{ rubric.max_marks }}" required>
+                            </td>
+                            <td>
+                                <input type="text" name="feedback_{{ rubric.id }}" class="form-control" 
+                                       value="{{ existing_score.feedback if existing_score else '' }}" 
+                                       placeholder="Specific observations for this criterion">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Fallback if no criteria created: allow total marks directly -->
+            <div class="alert alert-info">
+                No specific rubric criteria configured for this examination. Please award total marks directly below.
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Total Marks (Max {{ booking.slot.examination.max_marks }})</label>
+                <input type="number" step="0.5" min="0" max="{{ booking.slot.examination.max_marks }}" 
+                       name="direct_total_marks" class="form-control" 
+                       value="{{ existing_evaluation.total_marks if existing_evaluation else '' }}" required>
+            </div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Overall Examiner Remarks / Feedback</label>
+            <textarea class="form-control" name="overall_remarks" rows="3" placeholder="Provide general feedback, overall assessment of the student's performance...">{{ existing_evaluation.remarks if existing_evaluation else '' }}</textarea>
+        </div>
+
+        <div class="form-check form-switch mb-4">
+            <input class="form-check-input" type="checkbox" id="publishToggle" name="is_published" value="1"
+                   {% if existing_evaluation and existing_evaluation.is_published %}checked{% endif %}>
+            <label class="form-check-label fw-semibold" for="publishToggle">
+                Publish Results (Allow student to view these marks and feedback immediately)
+            </label>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('examiner_students') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-emp-primary btn-lg">Submit & Save Evaluation</button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+

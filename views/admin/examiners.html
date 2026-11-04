@@ -1,0 +1,87 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN EXAMINERS MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Examiners Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Examiners Management</h2>
+        <p class="text-muted mb-0">Review faculty applications, approve examiners, and manage active status</p>
+    </div>
+</div>
+
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Registered Examiners ({{ examiners|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Examiner Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Contact Details</th>
+                    <th>Approval Status</th>
+                    <th>Account Status</th>
+                    <th>Assigned Exams</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ex in examiners %}
+                <tr>
+                    <td><strong>{{ ex.full_name }}</strong></td>
+                    <td>{{ ex.email }}</td>
+                    <td>{{ ex.examiner_profile.department if ex.examiner_profile else 'N/A' }}</td>
+                    <td class="small">{{ ex.examiner_profile.contact_details if ex.examiner_profile else 'N/A' }}</td>
+                    <td>
+                        {% set app_stat = ex.examiner_profile.approval_status if ex.examiner_profile else 'unknown' %}
+                        <span class="badge-status badge-{{ app_stat }}">{{ app_stat|capitalize }}</span>
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ ex.status }}">{{ ex.status|capitalize }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ ex.assigned_examinations.count() }} Exams</span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            {% if ex.examiner_profile and ex.examiner_profile.approval_status != 'approved' %}
+                            <form method="POST" action="{{ url_for('admin_examiners_status', user_id=ex.id, action='approve') }}" style="display:inline;">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                            {% endif %}
+
+                            {% if ex.status == 'active' %}
+                            <form method="POST" action="{{ url_for('admin_examiners_status', user_id=ex.id, action='deactivate') }}" style="display:inline;">
+                                <button type="submit" class="btn btn-outline-warning btn-sm">Deactivate</button>
+                            </form>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('admin_examiners_status', user_id=ex.id, action='activate') }}" style="display:inline;">
+                                <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
+                            </form>
+                            {% endif %}
+
+                            {% if ex.examiner_profile and ex.examiner_profile.approval_status == 'pending' %}
+                            <form method="POST" action="{{ url_for('admin_examiners_status', user_id=ex.id, action='reject') }}" style="display:inline;">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No examiners registered yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

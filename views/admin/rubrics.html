@@ -1,0 +1,163 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN RUBRIC MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Rubric Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_examinations') }}">Examinations</a></li>
+                <li class="breadcrumb-item active">{{ exam.name }}</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-navy mb-0">Evaluation Rubric Configuration</h2>
+        <p class="text-muted mb-0">Configure evaluation criteria, maximum marks, and weightage for: <strong>{{ exam.name }}</strong> (Course: {{ exam.course.course_code }})</p>
+    </div>
+    <a href="{{ url_for('admin_examinations') }}" class="btn btn-outline-secondary">&larr; Back to Examinations</a>
+</div>
+
+<!-- Rubric Marks Summary Card -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="emp-card p-3">
+            <div class="text-muted small">Examination Maximum Marks</div>
+            <div class="fs-4 fw-bold text-navy">{{ exam.max_marks }} Marks</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="emp-card p-3">
+            <div class="text-muted small">Configured Rubric Total</div>
+            <div class="fs-4 fw-bold {{ 'text-success' if exam.total_rubric_marks == exam.max_marks else 'text-warning' }}">
+                {{ exam.total_rubric_marks }} Marks
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="emp-card p-3">
+            <div class="text-muted small">Status Validation</div>
+            <div class="mt-1">
+                {% if exam.total_rubric_marks == exam.max_marks %}
+                    <span class="badge bg-success">Perfect Match</span>
+                {% elif exam.total_rubric_marks < exam.max_marks %}
+                    <span class="badge bg-warning text-dark">{{ (exam.max_marks - exam.total_rubric_marks)|round(2) }} marks remaining to allocate</span>
+                {% else %}
+                    <span class="badge bg-danger">Exceeds Exam Max by {{ (exam.total_rubric_marks - exam.max_marks)|round(2) }} marks</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add Criterion Form -->
+    <div class="col-lg-4 mb-4">
+        <div class="emp-card p-3">
+            <h5 class="fw-bold text-navy mb-3">Add Rubric Criterion</h5>
+            <form method="POST" action="{{ url_for('admin_rubrics_create', exam_id=exam.id) }}">
+                <div class="mb-3">
+                    <label class="form-label">Criterion Name</label>
+                    <input type="text" class="form-control" name="criterion_name" placeholder="e.g. Conceptual Understanding" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description / Expectations</label>
+                    <textarea class="form-control" name="description" rows="2" placeholder="What the examiner should look for"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Max Marks</label>
+                        <input type="number" step="0.5" class="form-control" name="max_marks" min="0.5" placeholder="e.g. 20" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Weightage</label>
+                        <input type="number" step="0.1" class="form-control" name="weightage" value="1.0" min="0.1" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-emp-primary w-100">+ Add Criterion</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Criteria Table -->
+    <div class="col-lg-8">
+        <div class="emp-card">
+            <div class="emp-card-header">
+                <span>Configured Criteria ({{ exam.rubrics|length }})</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-emp mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Criterion</th>
+                            <th>Max Marks</th>
+                            <th>Weightage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rubric in exam.rubrics %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <strong>{{ rubric.criterion_name }}</strong>
+                                {% if rubric.description %}
+                                <div class="small text-muted">{{ rubric.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-primary fs-6">{{ rubric.max_marks }}</span></td>
+                            <td>{{ rubric.weightage }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#editRubric{{ rubric.id }}">
+                                        Edit
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin_rubrics_delete', rubric_id=rubric.id) }}" style="display:inline;" onsubmit="return confirm('Delete this criterion?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Inline Accordion -->
+                        <tr class="collapse bg-light" id="editRubric{{ rubric.id }}">
+                            <td colspan="5" class="p-3">
+                                <form method="POST" action="{{ url_for('admin_rubrics_edit', rubric_id=rubric.id) }}">
+                                    <h6 class="fw-bold mb-2">Edit Criterion: {{ rubric.criterion_name }}</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <input type="text" name="criterion_name" class="form-control form-control-sm" value="{{ rubric.criterion_name }}" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" name="description" class="form-control form-control-sm" value="{{ rubric.description or '' }}" placeholder="Description">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="number" step="0.5" name="max_marks" class="form-control form-control-sm" value="{{ rubric.max_marks }}" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="number" step="0.1" name="weightage" class="form-control form-control-sm" value="{{ rubric.weightage }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-end">
+                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#editRubric{{ rubric.id }}">Cancel</button>
+                                        <button type="submit" class="btn btn-emp-primary btn-sm">Save</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No rubric criteria added yet. Add criteria using the form on the left.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

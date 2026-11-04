@@ -1,0 +1,166 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN DASHBOARD TEMPLATE
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Administrator Dashboard</h2>
+        <p class="text-muted mb-0">Overview of academic courses, examinations, examiners, and bookings</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin_examinations') }}" class="btn btn-emp-primary me-2">+ New Examination</a>
+        <a href="{{ url_for('admin_courses') }}" class="btn btn-emp-outline">+ New Course</a>
+    </div>
+</div>
+
+<!-- Key Performance Indicators / Statistics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4 col-lg-2">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_courses }}</div>
+                <div class="stat-label">Courses</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_examinations }}</div>
+                <div class="stat-label">Examinations</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_examiners }}</div>
+                <div class="stat-label">Examiners</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_students }}</div>
+                <div class="stat-label">Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_slots }}</div>
+                <div class="stat-label">Total Slots</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_bookings }}</div>
+                <div class="stat-label">Bookings</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if stats.pending_examiners > 0 %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <strong>Attention:</strong> There are <strong>{{ stats.pending_examiners }}</strong> examiner registration(s) awaiting your approval.
+    </div>
+    <a href="{{ url_for('admin_examiners') }}" class="btn btn-sm btn-warning">Review Examiners</a>
+</div>
+{% endif %}
+
+<!-- Quick Management Cards -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="emp-card h-100">
+            <div class="emp-card-header d-flex justify-content-between align-items-center">
+                <span>Recent Examinations</span>
+                <a href="{{ url_for('admin_examinations') }}" class="small text-decoration-none">Manage All &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-emp mb-0">
+                    <thead>
+                        <tr>
+                            <th>Examination</th>
+                            <th>Course</th>
+                            <th>Status</th>
+                            <th>Booking Window</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in recent_exams %}
+                        <tr>
+                            <td>
+                                <strong>{{ exam.name }}</strong><br>
+                                <small class="text-muted">{{ exam.exam_type }} ({{ exam.duration }} mins)</small>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ exam.course.course_code }}</span></td>
+                            <td>
+                                <span class="badge-status badge-{{ exam.status }}">{{ exam.status|capitalize }}</span>
+                            </td>
+                            <td class="small">
+                                {{ exam.booking_start.strftime('%d %b %H:%M') }} &ndash;<br>{{ exam.booking_end.strftime('%d %b %H:%M') }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No examinations created yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="emp-card h-100">
+            <div class="emp-card-header d-flex justify-content-between align-items-center">
+                <span>Recent Bookings</span>
+                <a href="{{ url_for('admin_bookings') }}" class="small text-decoration-none">Manage All &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-emp mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Examination</th>
+                            <th>Slot Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in recent_bookings %}
+                        <tr>
+                            <td>
+                                <strong>{{ b.student.full_name }}</strong><br>
+                                <small class="text-muted">{{ b.student.student_id or b.student.email }}</small>
+                            </td>
+                            <td>{{ b.slot.examination.name }}</td>
+                            <td class="small">{{ b.slot.date.strftime('%d %b %Y') }}<br>{{ b.slot.start_time.strftime('%H:%M') }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ b.status }}">{{ b.status|capitalize }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No student bookings yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

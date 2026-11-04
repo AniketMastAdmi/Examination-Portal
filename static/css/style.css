@@ -1,0 +1,210 @@
+/* ==========================================
+   EMP 0.2 - EXAMINATION MANAGEMENT PORTAL
+   Custom Styling (Navy Blue & Clean Academic UI)
+   ========================================== */
+
+:root {
+    --emp-navy: #0d233a;
+    --emp-navy-light: #1a365d;
+    --emp-navy-hover: #152c4d;
+    --emp-accent: #2b6cb0;
+    --emp-bg: #f4f6f9;
+    --emp-card-bg: #ffffff;
+    --emp-text-dark: #2d3748;
+    --emp-text-muted: #718096;
+    --emp-border: #e2e8f0;
+}
+
+body {
+    background-color: var(--emp-bg);
+    color: var(--emp-text-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar-emp {
+    background-color: var(--emp-navy);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.navbar-emp .navbar-brand {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+}
+
+.navbar-emp .nav-link {
+    color: #cbd5e0;
+    font-weight: 500;
+    padding: 0.5rem 0.85rem;
+    transition: color 0.15s ease-in-out;
+}
+
+.navbar-emp .nav-link:hover,
+.navbar-emp .nav-link.active {
+    color: #ffffff;
+}
+
+/* Page Container */
+.main-content {
+    flex: 1 0 auto;
+    padding: 2rem 0;
+}
+
+/* Footer */
+.footer-emp {
+    background-color: #ffffff;
+    border-top: 1px solid var(--emp-border);
+    padding: 1.25rem 0;
+    color: var(--emp-text-muted);
+    font-size: 0.875rem;
+}
+
+/* Cards */
+.emp-card {
+    background: var(--emp-card-bg);
+    border: 1px solid var(--emp-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.emp-card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--emp-border);
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+    color: var(--emp-navy);
+}
+
+.stat-card {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    transition: transform 0.15s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-card .card-body {
+    padding: 1.25rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--emp-navy);
+}
+
+.stat-card .stat-label {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--emp-text-muted);
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn-emp-primary {
+    background-color: var(--emp-navy);
+    border-color: var(--emp-navy);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.btn-emp-primary:hover {
+    background-color: var(--emp-navy-hover);
+    border-color: var(--emp-navy-hover);
+    color: #ffffff;
+}
+
+.btn-emp-outline {
+    border: 1px solid var(--emp-navy);
+    color: var(--emp-navy);
+    font-weight: 500;
+}
+
+.btn-emp-outline:hover {
+    background-color: var(--emp-navy);
+    color: #ffffff;
+}
+
+/* Badges */
+.badge-status {
+    padding: 0.35em 0.65em;
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.badge-active, .badge-approved, .badge-confirmed, .badge-published {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-inactive, .badge-rejected, .badge-cancelled, .badge-full {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-draft {
+    background-color: #e2e8f0;
+    color: #475569;
+}
+
+.badge-available {
+    background-color: #e0f2fe;
+    color: #0369a1;
+}
+
+/* Tables */
+.table-emp {
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-emp thead th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--emp-border);
+    padding: 0.75rem 1rem;
+}
+
+.table-emp tbody td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--emp-border);
+}
+
+/* Forms */
+.form-card {
+    max-width: 520px;
+    margin: 2rem auto;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--emp-navy);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--emp-accent);
+    box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.15);
+}
+

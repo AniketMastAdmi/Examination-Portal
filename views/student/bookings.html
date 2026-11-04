@@ -1,0 +1,74 @@
+<!-- ==========================================
+     MILESTONE 5: STUDENT ACTIVE BOOKINGS
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}My Bookings - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">My Active Bookings</h2>
+        <p class="text-muted mb-0">View your scheduled examination appointments and manage cancellations</p>
+    </div>
+    <a href="{{ url_for('student_slots') }}" class="btn btn-emp-primary">+ Book Another Examination</a>
+</div>
+
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Active Confirmed Bookings ({{ bookings|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Course & Examination</th>
+                    <th>Scheduled Date</th>
+                    <th>Time Window</th>
+                    <th>Assigned Examiner</th>
+                    <th>Booking Deadline</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td><code>#BK-{{ b.id }}</code></td>
+                    <td>
+                        <strong>{{ b.slot.examination.name }}</strong>
+                        <div><span class="badge bg-secondary">{{ b.slot.examination.course.course_code }}</span> <small class="text-muted">{{ b.slot.examination.course.course_name }}</small></div>
+                    </td>
+                    <td><strong>{{ b.slot.date.strftime('%d %b %Y') }}</strong></td>
+                    <td>{{ b.slot.start_time.strftime('%H:%M') }} &ndash; {{ b.slot.end_time.strftime('%H:%M') }}</td>
+                    <td>
+                        <strong>{{ b.slot.examiner.full_name }}</strong><br>
+                        <small class="text-muted">{{ b.slot.examiner.examiner_profile.department if b.slot.examiner.examiner_profile else 'Faculty' }}</small>
+                    </td>
+                    <td class="small">
+                        {{ b.slot.examination.booking_end.strftime('%d %b %Y, %H:%M') }}
+                    </td>
+                    <td>
+                        {% if b.slot.examination.can_cancel_booking() %}
+                        <form method="POST" action="{{ url_for('student_cancel_booking', booking_id=b.id) }}" onsubmit="return confirm('Are you sure you want to cancel this booking? The slot seat will be released immediately.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Booking</button>
+                        </form>
+                        {% else %}
+                        <span class="badge bg-secondary" title="Cancellation deadline has passed">Locked</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-5">
+                        <p class="mb-2">You currently have no active examination bookings.</p>
+                        <a href="{{ url_for('student_examinations') }}" class="btn btn-sm btn-emp-primary">Browse Examinations to Book</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

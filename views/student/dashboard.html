@@ -1,0 +1,135 @@
+<!-- ==========================================
+     MILESTONE 5: STUDENT DASHBOARD TEMPLATE
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Student Dashboard</h2>
+        <p class="text-muted mb-0">Welcome, {{ current_user.full_name }} &bull; Roll No: {{ current_user.student_id or 'Not specified' }} &bull; {{ current_user.department or 'General' }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('student_examinations') }}" class="btn btn-emp-primary">Discover Examinations &rarr;</a>
+    </div>
+</div>
+
+<!-- Student Statistics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value">{{ open_exams_count }}</div>
+                <div class="stat-label">Available Exams</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value text-primary">{{ confirmed_bookings_count }}</div>
+                <div class="stat-label">Active Bookings</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value text-secondary">{{ total_history_count }}</div>
+                <div class="stat-label">Total History</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="emp-card stat-card text-center">
+            <div class="card-body">
+                <div class="stat-value text-success">{{ published_results_count }}</div>
+                <div class="stat-label">Published Results</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Upcoming Confirmed Slots -->
+    <div class="col-lg-7">
+        <div class="emp-card h-100">
+            <div class="emp-card-header d-flex justify-content-between align-items-center">
+                <span>Upcoming Examination Bookings</span>
+                <a href="{{ url_for('student_bookings') }}" class="small text-decoration-none">Manage Bookings &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-emp mb-0">
+                    <thead>
+                        <tr>
+                            <th>Examination</th>
+                            <th>Date & Time</th>
+                            <th>Examiner</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in active_bookings %}
+                        <tr>
+                            <td>
+                                <strong>{{ b.slot.examination.name }}</strong><br>
+                                <span class="badge bg-light text-dark border">{{ b.slot.examination.course.course_code }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ b.slot.date.strftime('%d %b %Y') }}</strong><br>
+                                <small class="text-muted">{{ b.slot.start_time.strftime('%H:%M') }} &ndash; {{ b.slot.end_time.strftime('%H:%M') }}</small>
+                            </td>
+                            <td>{{ b.slot.examiner.full_name }}</td>
+                            <td>
+                                {% if b.slot.examination.can_cancel_booking() %}
+                                <form method="POST" action="{{ url_for('student_cancel_booking', booking_id=b.id) }}" onsubmit="return confirm('Cancel this slot booking?');" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </form>
+                                {% else %}
+                                <span class="badge bg-secondary">Locked</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                You have no upcoming bookings. <a href="{{ url_for('student_examinations') }}">Browse open examinations</a> to book your slot.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Published Results -->
+    <div class="col-lg-5">
+        <div class="emp-card h-100">
+            <div class="emp-card-header d-flex justify-content-between align-items-center">
+                <span>Recent Published Results</span>
+                <a href="{{ url_for('student_results') }}" class="small text-decoration-none">All Results &rarr;</a>
+            </div>
+            <div class="p-3">
+                {% for r in recent_results %}
+                <div class="border rounded p-3 mb-2 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-navy">{{ r.booking.slot.examination.name }}</strong>
+                        <span class="badge bg-success fs-6">{{ r.total_marks }} / {{ r.booking.slot.examination.max_marks }}</span>
+                    </div>
+                    <div class="small text-muted mb-2">Evaluator: {{ r.examiner.full_name }} &bull; {{ r.evaluated_at.strftime('%d %b %Y') }}</div>
+                    {% if r.remarks %}
+                    <p class="small mb-0 text-dark"><em>"{{ r.remarks }}"</em></p>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">No results published yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,261 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN EXAMINATIONS MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Examination Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Examination Management</h2>
+        <p class="text-muted mb-0">Configure examinations, timelines, rubric criteria, and assign approved examiners</p>
+    </div>
+    <button class="btn btn-emp-primary" data-bs-toggle="collapse" data-bs-target="#createExamCard">
+        + Create New Examination
+    </button>
+</div>
+
+<!-- Collapsible Create Examination Form -->
+<div class="collapse mb-4" id="createExamCard">
+    <div class="emp-card p-4">
+        <h5 class="fw-bold text-navy mb-3">Create Examination</h5>
+        <form method="POST" action="{{ url_for('admin_examinations_create') }}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Course</label>
+                    <select class="form-select" name="course_id" required>
+                        <option value="">-- Select Course --</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.course_code }} - {{ course.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Examination Name</label>
+                    <input type="text" class="form-control" name="name" placeholder="e.g. End-Term Viva Voce" required>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Examination Type</label>
+                    <select class="form-select" name="exam_type" required>
+                        <option value="Viva Voce">Viva Voce</option>
+                        <option value="Practical Lab">Practical Lab</option>
+                        <option value="Online Written">Online Written</option>
+                        <option value="Project Presentation">Project Presentation</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Duration (Minutes)</label>
+                    <input type="number" class="form-control" name="duration" min="5" value="30" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Maximum Marks</label>
+                    <input type="number" step="0.5" class="form-control" name="max_marks" min="1" value="100" required>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Description / Guidelines</label>
+                    <textarea class="form-control" name="description" rows="2" placeholder="Syllabus coverage or evaluation guidelines"></textarea>
+                </div>
+
+                <!-- Timelines -->
+                <div class="col-md-3">
+                    <label class="form-label">Slot Creation Start</label>
+                    <input type="datetime-local" class="form-control" name="slot_creation_start" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Slot Creation End</label>
+                    <input type="datetime-local" class="form-control" name="slot_creation_end" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Booking Start</label>
+                    <input type="datetime-local" class="form-control" name="booking_start" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Booking End (Deadline)</label>
+                    <input type="datetime-local" class="form-control" name="booking_end" required>
+                </div>
+
+                <!-- Status and Examiners -->
+                <div class="col-md-4">
+                    <label class="form-label">Initial Status</label>
+                    <select class="form-select" name="status">
+                        <option value="draft">Draft (Hidden from students)</option>
+                        <option value="published">Published (Visible to students)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-8">
+                    <label class="form-label">Assign Approved Examiners</label>
+                    <div class="border rounded p-2 bg-light" style="max-height: 120px; overflow-y: auto;">
+                        {% for ex in examiners %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="examiner_ids" value="{{ ex.id }}" id="exCheck{{ ex.id }}">
+                            <label class="form-check-label small" for="exCheck{{ ex.id }}">
+                                <strong>{{ ex.full_name }}</strong> ({{ ex.examiner_profile.department if ex.examiner_profile else 'Faculty' }})
+                            </label>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">No approved examiners available yet.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-12 text-end mt-3">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-toggle="collapse" data-bs-target="#createExamCard">Cancel</button>
+                    <button type="submit" class="btn btn-emp-primary">+ Create Examination</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Examination List -->
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Configured Examinations ({{ examinations|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Examination & Course</th>
+                    <th>Type & Marks</th>
+                    <th>Slot Creation Window</th>
+                    <th>Student Booking Window</th>
+                    <th>Assigned Examiners</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in examinations %}
+                <tr>
+                    <td>
+                        <strong>{{ exam.name }}</strong>
+                        <div><span class="badge bg-secondary">{{ exam.course.course_code }}</span> <small class="text-muted">{{ exam.course.course_name }}</small></div>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ exam.exam_type }}</span><br>
+                        <small class="text-muted">{{ exam.duration }} mins | Max: {{ exam.max_marks }}</small>
+                    </td>
+                    <td class="small">
+                        {{ exam.slot_creation_start.strftime('%d %b %Y %H:%M') }}<br>to {{ exam.slot_creation_end.strftime('%d %b %Y %H:%M') }}
+                    </td>
+                    <td class="small">
+                        {{ exam.booking_start.strftime('%d %b %Y %H:%M') }}<br>to {{ exam.booking_end.strftime('%d %b %Y %H:%M') }}
+                    </td>
+                    <td>
+                        <span class="badge bg-info text-dark">{{ exam.assigned_examiners|length }} assigned</span>
+                        <div class="small text-muted text-truncate" style="max-width: 150px;">
+                            {% for ex in exam.assigned_examiners %}
+                                {{ ex.full_name }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ exam.status }}">{{ exam.status|capitalize }}</span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('admin_rubrics', exam_id=exam.id) }}" class="btn btn-outline-primary" title="Configure Rubrics">
+                                Rubrics ({{ exam.rubrics|length }})
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#editExam{{ exam.id }}">
+                                Edit
+                            </button>
+                            <form method="POST" action="{{ url_for('admin_examinations_toggle', exam_id=exam.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-outline-{{ 'warning' if exam.status == 'published' else 'success' }}">
+                                    {{ 'Unpublish' if exam.status == 'published' else 'Publish' }}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Inline Edit Examination Accordion -->
+                <tr class="collapse bg-light" id="editExam{{ exam.id }}">
+                    <td colspan="7" class="p-3">
+                        <form method="POST" action="{{ url_for('admin_examinations_edit', exam_id=exam.id) }}">
+                            <h6 class="fw-bold mb-3">Edit Examination: {{ exam.name }}</h6>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Name</label>
+                                    <input type="text" name="name" class="form-control form-control-sm" value="{{ exam.name }}" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Type</label>
+                                    <select class="form-select form-select-sm" name="exam_type">
+                                        <option value="Viva Voce" {% if exam.exam_type == 'Viva Voce' %}selected{% endif %}>Viva Voce</option>
+                                        <option value="Practical Lab" {% if exam.exam_type == 'Practical Lab' %}selected{% endif %}>Practical Lab</option>
+                                        <option value="Online Written" {% if exam.exam_type == 'Online Written' %}selected{% endif %}>Online Written</option>
+                                        <option value="Project Presentation" {% if exam.exam_type == 'Project Presentation' %}selected{% endif %}>Project Presentation</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Duration (Mins)</label>
+                                    <input type="number" name="duration" class="form-control form-control-sm" value="{{ exam.duration }}" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Max Marks</label>
+                                    <input type="number" step="0.5" name="max_marks" class="form-control form-control-sm" value="{{ exam.max_marks }}" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Status</label>
+                                    <select class="form-select form-select-sm" name="status">
+                                        <option value="draft" {% if exam.status == 'draft' %}selected{% endif %}>Draft</option>
+                                        <option value="published" {% if exam.status == 'published' %}selected{% endif %}>Published</option>
+                                        <option value="completed" {% if exam.status == 'completed' %}selected{% endif %}>Completed</option>
+                                        <option value="cancelled" {% if exam.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label small">Slot Creation Start</label>
+                                    <input type="datetime-local" name="slot_creation_start" class="form-control form-control-sm" value="{{ exam.slot_creation_start.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Slot Creation End</label>
+                                    <input type="datetime-local" name="slot_creation_end" class="form-control form-control-sm" value="{{ exam.slot_creation_end.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Booking Start</label>
+                                    <input type="datetime-local" name="booking_start" class="form-control form-control-sm" value="{{ exam.booking_start.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Booking End</label>
+                                    <input type="datetime-local" name="booking_end" class="form-control form-control-sm" value="{{ exam.booking_end.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                </div>
+
+                                <div class="col-md-12 mt-2">
+                                    <label class="form-label small">Assign Examiners</label>
+                                    <div class="border rounded p-2 bg-white" style="max-height: 100px; overflow-y: auto;">
+                                        {% for ex in examiners %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" name="examiner_ids" value="{{ ex.id }}" id="editEx{{ exam.id }}_{{ ex.id }}"
+                                                {% if ex in exam.assigned_examiners %}checked{% endif %}>
+                                            <label class="form-check-label small" for="editEx{{ exam.id }}_{{ ex.id }}">{{ ex.full_name }}</label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-end">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#editExam{{ exam.id }}">Cancel</button>
+                                <button type="submit" class="btn btn-emp-primary btn-sm">Save Changes</button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No examinations configured yet. Click "+ Create New Examination" above.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

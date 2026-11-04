@@ -1,0 +1,96 @@
+<!-- ==========================================
+     MILESTONE 6: STUDENT BOOKING & EXAM HISTORY
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Booking History - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Booking & Examination History</h2>
+        <p class="text-muted mb-0">Comprehensive record of all your bookings, cancellations, and completed evaluations</p>
+    </div>
+</div>
+
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Historical Activity ({{ bookings|length }} records)</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Examination</th>
+                    <th>Slot Date & Time</th>
+                    <th>Examiner</th>
+                    <th>Booked On</th>
+                    <th>Status</th>
+                    <th>Details / Audit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td><code>#BK-{{ b.id }}</code></td>
+                    <td>
+                        <strong>{{ b.slot.examination.name }}</strong><br>
+                        <small class="text-muted">{{ b.slot.examination.course.course_code }} ({{ b.slot.examination.exam_type }})</small>
+                    </td>
+                    <td>
+                        {{ b.slot.date.strftime('%d %b %Y') }}<br>
+                        <small class="text-muted">{{ b.slot.start_time.strftime('%H:%M') }} &ndash; {{ b.slot.end_time.strftime('%H:%M') }}</small>
+                    </td>
+                    <td>{{ b.slot.examiner.full_name }}</td>
+                    <td class="small">{{ b.booking_date.strftime('%d %b %Y %H:%M') }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ b.status }}">{{ b.status|capitalize }}</span>
+                        {% if b.cancellation_timestamp %}
+                        <div class="small text-danger">Cancelled on {{ b.cancellation_timestamp.strftime('%d %b %Y, %H:%M') }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-info" data-bs-toggle="collapse" data-bs-target="#audit{{ b.id }}">
+                                Audit Log
+                            </button>
+                            {% if b.evaluation and b.evaluation.is_published %}
+                            <a href="{{ url_for('student_results') }}" class="btn btn-outline-success">View Result</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Audit History Accordion -->
+                <tr class="collapse bg-light" id="audit{{ b.id }}">
+                    <td colspan="7" class="p-3">
+                        <h6 class="fw-bold mb-2">Audit History for #BK-{{ b.id }}</h6>
+                        {% if b.history %}
+                        <ul class="list-group list-group-flush small">
+                            {% for h in b.history %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">{{ h.action|upper }}</span>
+                                    <span>{{ h.notes or 'No remarks recorded' }}</span>
+                                </div>
+                                <span class="text-muted">{{ h.timestamp.strftime('%d %b %Y %H:%M:%S') }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="small text-muted">Initial booking confirmed. No further changes recorded.</div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No examination booking history recorded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,161 @@
+<!-- ==========================================
+     MILESTONE 4: EXAMINER SLOTS MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Manage Slots - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">My Examination Slots</h2>
+        <p class="text-muted mb-0">Schedule interview/evaluation time slots for your assigned examinations</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Slot Creation Form -->
+    <div class="col-lg-4 mb-4">
+        <div class="emp-card p-3">
+            <h5 class="fw-bold text-navy mb-3">Create New Slot</h5>
+            <form method="POST" action="{{ url_for('examiner_slots_create') }}">
+                <div class="mb-3">
+                    <label class="form-label">Examination</label>
+                    <select name="examination_id" class="form-select" required>
+                        <option value="">-- Choose Assigned Exam --</option>
+                        {% for exam in assigned_exams %}
+                        <option value="{{ exam.id }}" {% if selected_exam_id == exam.id %}selected{% endif %}>
+                            {{ exam.course.course_code }} - {{ exam.name }} 
+                            {% if not exam.is_slot_creation_open() %}(Window Closed){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text small">Slots can only be scheduled during the exam's slot creation window.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" name="date" class="form-control" required>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" name="start_time" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">End Time</label>
+                        <input type="time" name="end_time" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Capacity (Max Students)</label>
+                    <input type="number" name="max_capacity" class="form-control" min="1" max="100" value="1" required>
+                    <div class="form-text small">E.g., 1 for 1-on-1 viva, or higher for group presentations/labs.</div>
+                </div>
+
+                <button type="submit" class="btn btn-emp-primary w-100">+ Create Slot</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Slots List Table -->
+    <div class="col-lg-8">
+        <div class="emp-card">
+            <div class="emp-card-header d-flex justify-content-between align-items-center">
+                <span>My Created Slots ({{ slots|length }})</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-emp mb-0">
+                    <thead>
+                        <tr>
+                            <th>Examination</th>
+                            <th>Date</th>
+                            <th>Time Window</th>
+                            <th>Capacity</th>
+                            <th>Booked</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in slots %}
+                        <tr>
+                            <td>
+                                <strong>{{ slot.examination.name }}</strong>
+                                <div class="small text-muted">{{ slot.examination.course.course_code }}</div>
+                            </td>
+                            <td>{{ slot.date.strftime('%d %b %Y') }}</td>
+                            <td>{{ slot.start_time.strftime('%H:%M') }} &ndash; {{ slot.end_time.strftime('%H:%M') }}</td>
+                            <td>{{ slot.max_capacity }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-success' if slot.booked_count > 0 else 'bg-secondary' }}">
+                                    {{ slot.booked_count }} booked
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-status badge-{{ slot.status }}">{{ slot.status|capitalize }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <!-- Edit Slot: Allowed before booking begins -->
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#editSlot{{ slot.id }}">
+                                        Edit
+                                    </button>
+
+                                    <!-- Delete Slot: Allowed only if booked_count == 0 -->
+                                    {% if slot.booked_count == 0 %}
+                                    <form method="POST" action="{{ url_for('examiner_slots_delete', slot_id=slot.id) }}" style="display:inline;" onsubmit="return confirm('Delete this unbooked slot?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                    {% else %}
+                                    <button class="btn btn-outline-secondary" disabled title="Cannot delete slot with active bookings">Locked</button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Slot Inline Accordion -->
+                        <tr class="collapse bg-light" id="editSlot{{ slot.id }}">
+                            <td colspan="7" class="p-3">
+                                <form method="POST" action="{{ url_for('examiner_slots_edit', slot_id=slot.id) }}">
+                                    <h6 class="fw-bold mb-2">Edit Slot for {{ slot.examination.name }}</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Date</label>
+                                            <input type="date" name="date" class="form-control form-control-sm" value="{{ slot.date.strftime('%Y-%m-%d') }}" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Start Time</label>
+                                            <input type="time" name="start_time" class="form-control form-control-sm" value="{{ slot.start_time.strftime('%H:%M') }}" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">End Time</label>
+                                            <input type="time" name="end_time" class="form-control form-control-sm" value="{{ slot.end_time.strftime('%H:%M') }}" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Capacity (Min {{ slot.booked_count }})</label>
+                                            <input type="number" name="max_capacity" class="form-control form-control-sm" min="{{ slot.booked_count if slot.booked_count > 0 else 1 }}" value="{{ slot.max_capacity }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-end">
+                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#editSlot{{ slot.id }}">Cancel</button>
+                                        <button type="submit" class="btn btn-emp-primary btn-sm">Save Changes</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No examination slots created yet. Use the form on the left to schedule your availability.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

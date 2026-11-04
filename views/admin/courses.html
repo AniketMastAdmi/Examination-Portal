@@ -1,0 +1,128 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN COURSES MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Course Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Course Management</h2>
+        <p class="text-muted mb-0">Add, configure, and manage academic courses</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Course Creation Form -->
+    <div class="col-lg-4 mb-4">
+        <div class="emp-card p-3">
+            <h5 class="fw-bold text-navy mb-3">Add New Course</h5>
+            <form method="POST" action="{{ url_for('admin_courses_create') }}">
+                <div class="mb-3">
+                    <label for="course_code" class="form-label">Course Code</label>
+                    <input type="text" class="form-control" id="course_code" name="course_code" placeholder="e.g. CS201" required>
+                </div>
+                <div class="mb-3">
+                    <label for="course_name" class="form-label">Course Name</label>
+                    <input type="text" class="form-control" id="course_name" name="course_name" placeholder="e.g. Data Structures" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3" placeholder="Brief course syllabus/overview"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="status" class="form-label">Initial Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="active" selected>Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-emp-primary w-100">+ Save Course</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Course List Table -->
+    <div class="col-lg-8">
+        <div class="emp-card">
+            <div class="emp-card-header">
+                <span>Existing Courses ({{ courses|length }})</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-emp mb-0">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Course Name</th>
+                            <th>Status</th>
+                            <th>Exams</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ course.course_code }}</span></td>
+                            <td>
+                                <strong>{{ course.course_name }}</strong>
+                                {% if course.description %}
+                                <div class="small text-muted text-truncate" style="max-width: 280px;">{{ course.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge-status badge-{{ course.status }}">{{ course.status|capitalize }}</span>
+                            </td>
+                            <td>{{ course.examinations|length }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#editCourse{{ course.id }}">
+                                        Edit
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin_courses_toggle', course_id=course.id) }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-{{ 'warning' if course.status == 'active' else 'success' }}">
+                                            {{ 'Deactivate' if course.status == 'active' else 'Activate' }}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('admin_courses_delete', course_id=course.id) }}" style="display:inline;" onsubmit="return confirm('Delete course and all related exams?');">
+                                        <button type="submit" class="btn btn-outline-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Inline Edit Accordion -->
+                        <tr class="collapse bg-light" id="editCourse{{ course.id }}">
+                            <td colspan="5" class="p-3">
+                                <form method="POST" action="{{ url_for('admin_courses_edit', course_id=course.id) }}">
+                                    <h6 class="fw-bold mb-2">Edit {{ course.course_code }}</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-3">
+                                            <input type="text" name="course_code" class="form-control form-control-sm" value="{{ course.course_code }}" required>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <input type="text" name="course_name" class="form-control form-control-sm" value="{{ course.course_name }}" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" name="description" class="form-control form-control-sm" value="{{ course.description or '' }}" placeholder="Description">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-end">
+                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#editCourse{{ course.id }}">Cancel</button>
+                                        <button type="submit" class="btn btn-emp-primary btn-sm">Update Course</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No courses defined yet. Add your first course using the form on the left.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

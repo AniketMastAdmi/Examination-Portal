@@ -1,0 +1,98 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN SLOTS MONITORING
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Slot Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Examination Slots Overview</h2>
+        <p class="text-muted mb-0">Monitor created slots, capacity distribution, and assigned examiners</p>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="emp-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('admin_slots') }}" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <select name="exam_id" class="form-select">
+                <option value="">-- All Examinations --</option>
+                {% for exam in examinations %}
+                <option value="{{ exam.id }}" {% if selected_exam_id == exam.id %}selected{% endif %}>
+                    {{ exam.course.course_code }} - {{ exam.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">-- All Statuses --</option>
+                <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+                <option value="full" {% if selected_status == 'full' %}selected{% endif %}>Full</option>
+                <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-emp-primary flex-grow-1">Filter</button>
+            {% if selected_exam_id or selected_status %}
+            <a href="{{ url_for('admin_slots') }}" class="btn btn-outline-secondary">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Slots Table -->
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Created Slots ({{ slots|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Slot ID</th>
+                    <th>Examination</th>
+                    <th>Examiner</th>
+                    <th>Date</th>
+                    <th>Time Window</th>
+                    <th>Capacity</th>
+                    <th>Booked</th>
+                    <th>Available Seats</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in slots %}
+                <tr>
+                    <td><code>#SLOT-{{ slot.id }}</code></td>
+                    <td>
+                        <strong>{{ slot.examination.name }}</strong>
+                        <div class="small text-muted">{{ slot.examination.course.course_code }}</div>
+                    </td>
+                    <td>{{ slot.examiner.full_name }}</td>
+                    <td>{{ slot.date.strftime('%d %b %Y') }}</td>
+                    <td>{{ slot.start_time.strftime('%H:%M') }} &ndash; {{ slot.end_time.strftime('%H:%M') }}</td>
+                    <td>{{ slot.max_capacity }}</td>
+                    <td><strong>{{ slot.booked_count }}</strong></td>
+                    <td>
+                        <span class="badge {{ 'bg-success' if slot.available_seats > 0 else 'bg-secondary' }}">
+                            {{ slot.available_seats }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ slot.status }}">{{ slot.status|capitalize }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No examination slots found matching criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

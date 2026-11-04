@@ -1,0 +1,92 @@
+<!-- ==========================================
+     MILESTONE 5: STUDENT EXAMINATION DISCOVERY
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Examinations - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Examination Discovery</h2>
+        <p class="text-muted mb-0">Search active courses, view upcoming evaluation schedules, and book interview slots</p>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="emp-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('student_examinations') }}" class="row g-2 align-items-center">
+        <div class="col-md-7">
+            <input type="text" name="search" class="form-control" placeholder="Search by Examination Name, Course Code (e.g. CS101), Course Name..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <select name="exam_type" class="form-select">
+                <option value="">-- All Exam Types --</option>
+                <option value="Viva Voce" {% if selected_type == 'Viva Voce' %}selected{% endif %}>Viva Voce</option>
+                <option value="Practical Lab" {% if selected_type == 'Practical Lab' %}selected{% endif %}>Practical Lab</option>
+                <option value="Online Written" {% if selected_type == 'Online Written' %}selected{% endif %}>Online Written</option>
+                <option value="Project Presentation" {% if selected_type == 'Project Presentation' %}selected{% endif %}>Project Presentation</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-emp-primary flex-grow-1">Filter</button>
+            {% if search_query or selected_type %}
+            <a href="{{ url_for('student_examinations') }}" class="btn btn-outline-secondary">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Examinations List -->
+<div class="row g-4">
+    {% for exam in examinations %}
+    <div class="col-md-6 col-lg-4">
+        <div class="emp-card h-100 d-flex flex-column">
+            <div class="emp-card-header d-flex justify-content-between align-items-center">
+                <span class="badge bg-secondary">{{ exam.course.course_code }}</span>
+                <span class="badge bg-light text-dark border">{{ exam.exam_type }}</span>
+            </div>
+            <div class="p-3 flex-grow-1">
+                <h5 class="fw-bold text-navy mb-1">{{ exam.name }}</h5>
+                <div class="small text-muted mb-2">{{ exam.course.course_name }}</div>
+                
+                {% if exam.description %}
+                <p class="small text-secondary mb-3">{{ exam.description }}</p>
+                {% endif %}
+
+                <ul class="list-unstyled small mb-3">
+                    <li><strong>Duration:</strong> {{ exam.duration }} Minutes</li>
+                    <li><strong>Maximum Marks:</strong> {{ exam.max_marks }}</li>
+                    <li><strong>Booking Closes:</strong> {{ exam.booking_end.strftime('%d %b %Y, %H:%M') }}</li>
+                </ul>
+
+                <div>
+                    {% if exam.id in booked_exam_ids %}
+                        <span class="badge bg-success py-2 w-100 text-center">&check; Slot Already Booked</span>
+                    {% elif exam.is_booking_open() %}
+                        <a href="{{ url_for('student_slots', exam_id=exam.id) }}" class="btn btn-emp-primary w-100">Browse & Book Slots</a>
+                    {% else %}
+                        <button class="btn btn-outline-secondary w-100" disabled>Booking Closed</button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top small text-muted py-2">
+                {% if exam.is_booking_open() %}
+                    <span class="text-success">&bull; Booking window open</span>
+                {% else %}
+                    <span class="text-secondary">&bull; Outside booking window</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="emp-card p-5 text-center text-muted">
+            <h5>No examinations found matching your search.</h5>
+            <p class="mb-0">Please check back once examinations are published by the administration.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

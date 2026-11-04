@@ -1,0 +1,124 @@
+<!-- ==========================================
+     MILESTONE 5: STUDENT SLOTS BOOKING VIEW
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Available Slots - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Available Examination Slots</h2>
+        <p class="text-muted mb-0">Select a convenient evaluation time slot with an assigned examiner</p>
+    </div>
+    {% if selected_exam %}
+    <a href="{{ url_for('student_examinations') }}" class="btn btn-outline-secondary">&larr; All Examinations</a>
+    {% endif %}
+</div>
+
+<!-- Examination Filter Selector -->
+<div class="emp-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('student_slots') }}" class="row g-2 align-items-center">
+        <div class="col-md-9">
+            <select name="exam_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Select Examination to View Slots --</option>
+                {% for exam in published_exams %}
+                <option value="{{ exam.id }}" {% if selected_exam and selected_exam.id == exam.id %}selected{% endif %}>
+                    {{ exam.course.course_code }} - {{ exam.name }} (Booking closes: {{ exam.booking_end.strftime('%d %b %H:%M') }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-emp-primary w-100">Load Slots</button>
+        </div>
+    </form>
+</div>
+
+{% if selected_exam %}
+    <!-- Selected Exam Context Banner -->
+    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="mb-1 fw-bold">{{ selected_exam.name }} &bull; {{ selected_exam.course.course_code }}</h5>
+            <small>Duration: {{ selected_exam.duration }} mins | Maximum Marks: {{ selected_exam.max_marks }} | Booking Deadline: {{ selected_exam.booking_end.strftime('%d %b %Y, %H:%M') }}</small>
+        </div>
+        <div>
+            {% if already_booked_this_exam %}
+                <span class="badge bg-warning text-dark fs-6">&check; You already have a confirmed slot for this exam</span>
+            {% elif not selected_exam.is_booking_open() %}
+                <span class="badge bg-danger fs-6">Booking Window Closed</span>
+            {% else %}
+                <span class="badge bg-success fs-6">Booking Open</span>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+<!-- Slots Table -->
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Available Time Slots ({{ slots|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Examination</th>
+                    <th>Date</th>
+                    <th>Time Window</th>
+                    <th>Examiner</th>
+                    <th>Capacity / Available</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in slots %}
+                <tr>
+                    <td>
+                        <strong>{{ slot.examination.name }}</strong><br>
+                        <span class="badge bg-light text-dark border">{{ slot.examination.course.course_code }}</span>
+                    </td>
+                    <td><strong>{{ slot.date.strftime('%d %b %Y') }}</strong></td>
+                    <td>{{ slot.start_time.strftime('%H:%M') }} &ndash; {{ slot.end_time.strftime('%H:%M') }}</td>
+                    <td>
+                        <strong>{{ slot.examiner.full_name }}</strong><br>
+                        <small class="text-muted">{{ slot.examiner.examiner_profile.department if slot.examiner.examiner_profile else 'Faculty' }}</small>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">{{ slot.available_seats }}</span> seats left (Total: {{ slot.max_capacity }})
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ slot.status }}">{{ slot.status|capitalize }}</span>
+                    </td>
+                    <td>
+                        {% if slot.examination.id in booked_exam_ids %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Already Booked</button>
+                        {% elif not slot.examination.is_booking_open() %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Closed</button>
+                        {% elif slot.available_seats <= 0 or slot.status == 'full' %}
+                            <button class="btn btn-sm btn-outline-danger" disabled>Slot Full</button>
+                        {% else %}
+                            <form method="POST" action="{{ url_for('student_book_slot', slot_id=slot.id) }}" onsubmit="return confirm('Confirm booking this slot?');">
+                                <button type="submit" class="btn btn-sm btn-success">Book Slot</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        {% if selected_exam %}
+                            No slots created by examiners for this examination yet. Please check back later.
+                        {% else %}
+                            Please select an examination from the dropdown above to view available slots.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

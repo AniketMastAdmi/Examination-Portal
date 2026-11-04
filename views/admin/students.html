@@ -1,0 +1,74 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN STUDENTS MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Student Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Student Management</h2>
+        <p class="text-muted mb-0">Search registered students, inspect academic profiles, and monitor examination activity</p>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="emp-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('admin_students') }}" class="row g-2 align-items-center">
+        <div class="col-md-9">
+            <input type="text" name="search" class="form-control" placeholder="Search by Student Name, Roll Number / Student ID, Email, or Department..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-emp-primary flex-grow-1">Search</button>
+            {% if search_query %}
+            <a href="{{ url_for('admin_students') }}" class="btn btn-outline-secondary">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Students List -->
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Registered Students ({{ students|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Roll Number / ID</th>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Department</th>
+                    <th>Account Status</th>
+                    <th>Total Bookings</th>
+                    <th>Registered Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td><strong>{{ s.student_id or 'N/A' }}</strong></td>
+                    <td>{{ s.full_name }}</td>
+                    <td>{{ s.email }}</td>
+                    <td>{{ s.department or 'N/A' }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ s.status }}">{{ s.status|capitalize }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">{{ s.bookings|length }}</span>
+                    </td>
+                    <td class="small text-muted">{{ s.created_at.strftime('%d %b %Y') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No students found matching your criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

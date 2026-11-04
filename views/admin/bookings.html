@@ -1,0 +1,170 @@
+<!-- ==========================================
+     MILESTONE 3: ADMIN BOOKINGS MANAGEMENT
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Booking Management - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">Booking Management</h2>
+        <p class="text-muted mb-0">Monitor student bookings, reschedule slots, reassign examiners, and review audit history</p>
+    </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="emp-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('admin_bookings') }}" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control" placeholder="Search by Student Name, Roll No..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-4">
+            <select name="exam_id" class="form-select">
+                <option value="">-- All Examinations --</option>
+                {% for exam in examinations %}
+                <option value="{{ exam.id }}" {% if selected_exam_id == exam.id %}selected{% endif %}>
+                    {{ exam.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">-- Status --</option>
+                <option value="confirmed" {% if selected_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-emp-primary flex-grow-1">Filter</button>
+            {% if search_query or selected_exam_id or selected_status %}
+            <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline-secondary">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Bookings List -->
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Student Bookings ({{ bookings|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Student Details</th>
+                    <th>Examination</th>
+                    <th>Current Slot & Examiner</th>
+                    <th>Booking Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td><code>#BK-{{ b.id }}</code></td>
+                    <td>
+                        <strong>{{ b.student.full_name }}</strong><br>
+                        <small class="text-muted">ID: {{ b.student.student_id or 'N/A' }} | {{ b.student.email }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ b.slot.examination.name }}</strong><br>
+                        <span class="badge bg-light text-dark border">{{ b.slot.examination.course.course_code }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ b.slot.date.strftime('%d %b %Y') }}</strong> ({{ b.slot.start_time.strftime('%H:%M') }} - {{ b.slot.end_time.strftime('%H:%M') }})<br>
+                        <small class="text-muted">Examiner: {{ b.slot.examiner.full_name }}</small>
+                    </td>
+                    <td class="small">{{ b.booking_date.strftime('%d %b %Y %H:%M') }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ b.status }}">{{ b.status|capitalize }}</span>
+                        {% if b.cancellation_timestamp %}
+                        <div class="small text-danger">Cancelled on {{ b.cancellation_timestamp.strftime('%d %b %H:%M') }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-info" data-bs-toggle="collapse" data-bs-target="#history{{ b.id }}">
+                                History ({{ b.history|length }})
+                            </button>
+                            {% if b.status == 'confirmed' %}
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#reschedule{{ b.id }}">
+                                Reschedule
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Audit History Accordion -->
+                <tr class="collapse bg-light" id="history{{ b.id }}">
+                    <td colspan="7" class="p-3">
+                        <h6 class="fw-bold mb-2">Audit History for Booking #BK-{{ b.id }}</h6>
+                        {% if b.history %}
+                        <ul class="list-group list-group-flush small">
+                            {% for h in b.history %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">{{ h.action|upper }}</span>
+                                    <span>{{ h.notes or 'No remarks recorded' }}</span>
+                                </div>
+                                <span class="text-muted">{{ h.timestamp.strftime('%d %b %Y %H:%M:%S') }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="small text-muted">No audit history entries recorded yet.</div>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- Reschedule Form Accordion -->
+                {% if b.status == 'confirmed' %}
+                <tr class="collapse bg-white border-top border-bottom border-primary" id="reschedule{{ b.id }}">
+                    <td colspan="7" class="p-3">
+                        <form method="POST" action="{{ url_for('admin_bookings_reschedule', booking_id=b.id) }}">
+                            <h6 class="fw-bold text-navy mb-2">Reschedule Booking / Change Examiner for {{ b.student.full_name }}</h6>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-6">
+                                    <label class="form-label small">Select New Slot (Same Examination)</label>
+                                    <select name="new_slot_id" class="form-select form-select-sm" required>
+                                        <option value="">-- Choose Target Available Slot --</option>
+                                        {% for s in b.slot.examination.slots %}
+                                            {% if s.id != b.slot_id and s.status != 'cancelled' and s.available_seats > 0 %}
+                                            <option value="{{ s.id }}">
+                                                {{ s.date.strftime('%d %b %Y') }} ({{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }}) - Examiner: {{ s.examiner.full_name }} ({{ s.available_seats }} seats left)
+                                            </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Administrative Reason / Note</label>
+                                    <input type="text" name="reason" class="form-control form-control-sm" placeholder="e.g. Student requested slot change" required>
+                                </div>
+                                <div class="col-md-2 d-flex gap-1">
+                                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Confirm Reschedule</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#reschedule{{ b.id }}">Close</button>
+                                </div>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% endif %}
+
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No student bookings found matching criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

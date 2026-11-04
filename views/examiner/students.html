@@ -1,0 +1,91 @@
+<!-- ==========================================
+     MILESTONE 4: EXAMINER BOOKED STUDENTS
+     ========================================== -->
+{% extends "base.html" %}
+
+{% block title %}Booked Students - EMP 0.2{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-navy mb-0">My Booked Students</h2>
+        <p class="text-muted mb-0">View students assigned to your slots, perform evaluations, and record rubric marks</p>
+    </div>
+</div>
+
+<div class="emp-card">
+    <div class="emp-card-header d-flex justify-content-between align-items-center">
+        <span>Booked Students List ({{ bookings|length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-emp mb-0">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Student Name</th>
+                    <th>Roll No / ID</th>
+                    <th>Department</th>
+                    <th>Examination</th>
+                    <th>Slot Date & Time</th>
+                    <th>Booking Status</th>
+                    <th>Evaluation Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td><code>#BK-{{ b.id }}</code></td>
+                    <td><strong>{{ b.student.full_name }}</strong></td>
+                    <td>{{ b.student.student_id or 'N/A' }}</td>
+                    <td>{{ b.student.department or 'N/A' }}</td>
+                    <td>
+                        <strong>{{ b.slot.examination.name }}</strong>
+                        <div class="small text-muted">{{ b.slot.examination.course.course_code }}</div>
+                    </td>
+                    <td>
+                        {{ b.slot.date.strftime('%d %b %Y') }}<br>
+                        <small class="text-muted">{{ b.slot.start_time.strftime('%H:%M') }} &ndash; {{ b.slot.end_time.strftime('%H:%M') }}</small>
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ b.status }}">{{ b.status|capitalize }}</span>
+                    </td>
+                    <td>
+                        {% if b.evaluation %}
+                            <span class="badge bg-success">Evaluated ({{ b.evaluation.total_marks }}/{{ b.slot.examination.max_marks }})</span>
+                            {% if b.evaluation.is_published %}
+                                <div class="small text-muted">Result Published</div>
+                            {% else %}
+                                <div class="small text-muted">Draft / Unpublished</div>
+                            {% endif %}
+                        {% else %}
+                            {% if b.status == 'confirmed' %}
+                                <span class="badge bg-warning text-dark">Pending Evaluation</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Cancelled</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if b.status == 'confirmed' %}
+                            {% if b.evaluation %}
+                            <a href="{{ url_for('examiner_evaluate', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Edit Marks</a>
+                            {% else %}
+                            <a href="{{ url_for('examiner_evaluate', booking_id=b.id) }}" class="btn btn-sm btn-warning">Evaluate</a>
+                            {% endif %}
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No students have booked your examination slots yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
